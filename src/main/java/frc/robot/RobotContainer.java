@@ -7,6 +7,9 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -14,9 +17,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.robot.Constants.Limelight;
+import frc.robot.commands.ClimberAdjustSpeed;
+import frc.robot.commands.ClimberBackward;
+import frc.robot.commands.ClimberForward;
+import frc.robot.commands.RotateDegrees;
+import frc.robot.commands.StopMotor;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.CoralGrabber;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -31,9 +41,12 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
-
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final Limelight limelight = new Limelight();
+    public final CoralGrabber coralGrabber = new CoralGrabber();
+    public final Climber climber = new Climber();
+
+    private final CommandXboxController joystick = new CommandXboxController(0);
 
     public RobotContainer() {
         configureBindings();
@@ -51,10 +64,21 @@ public class RobotContainer {
             )
         );
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        /****** SWERVE  ******/
+        // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        // joystick.b().whileTrue(drivetrain.applyRequest(() ->
+        //     point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        // ));
+
+        /******* CORAL GRABBER *******/
+        joystick.y().onTrue(new RotateDegrees(coralGrabber));
+        joystick.x().onTrue(new StopMotor(coralGrabber));
+        
+        /******* CLIMBER ******/
+        // joystick.y().whileTrue(new ClimberForward(climber, Constants.ClimberInitialSpeed));
+        // joystick.x().whileTrue(new ClimberBackward(climber, Constants.ClimberInitialSpeed));
+        // joystick.a().onTrue(new ClimberAdjustSpeed(climber, 0.05));
+        // joystick.b().onTrue(new ClimberAdjustSpeed(climber, -0.05));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
